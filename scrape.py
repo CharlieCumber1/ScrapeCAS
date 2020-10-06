@@ -2,6 +2,7 @@ from selenium import webdriver
 import csv
 import random
 import time
+import os
 
 def create_dictionary_from_table(table_element):
     table_header_row = table_element.find_element_by_xpath('//thead/tr[//th]')
@@ -80,6 +81,9 @@ for tables in tables_table_dictionary:
         col['TABLE NAME'] = tables['TABLE NAME']
     all_columns_dictionary += col_table
 driver.close()
+
+if not os.path.exists('Data'):
+    os.makedirs('Data')
 
 with open('Data/CAS_table.csv', 'w', newline='') as file:
     writer = csv.writer(file)
