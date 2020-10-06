@@ -3,7 +3,6 @@ import csv
 import random
 import time
 
-
 def create_dictionary_from_table(table_element):
     table_header_row = table_element.find_element_by_xpath('//thead/tr[//th]')
     table_header_row_cells = table_header_row.find_elements_by_xpath('th')
@@ -37,7 +36,6 @@ def clean_table_seperate_name_from_description(table_dictionary):
         row['TABLE NAME'] = split[0].lower()
         row['TABLE DESCRIPTION'] = split[1]
     return table_dictionary
-
 
 ## basic values
 database = 'cas'
@@ -81,7 +79,7 @@ for tables in tables_table_dictionary:
         col['COLUMN NAME'] = col['COLUMN NAME'].lower()
         col['TABLE NAME'] = tables['TABLE NAME']
     all_columns_dictionary += col_table
-
+driver.close()
 
 with open('Data/CAS_table.csv', 'w', newline='') as file:
     writer = csv.writer(file)
@@ -104,7 +102,6 @@ with open('Data/CAS_table_column_stats.csv', 'w', newline='') as file:
         writer.writerow([cluster,database,schema,y['TABLE NAME'],y['COLUMN NAME'],"Total records",'"'+y['TOTAL RECORDS']+'"',1432300762,1562300762])
         writer.writerow([cluster,database,schema,y['TABLE NAME'],y['COLUMN NAME'],"Completed records",'"'+y['COMPLETED RECORDS']+'"',1432300762,1562300762])
         writer.writerow([cluster,database,schema,y['TABLE NAME'],y['COLUMN NAME'],"Percentage",'"'+y['PERCENTAGE']+'"',1432300762,1562300762])
-driver.close()
 
 with open('Data/CAS_application.csv', 'w', newline='') as file:
     writer = csv.writer(file)
@@ -125,7 +122,6 @@ with open('Data/CAS_column_usage.csv', 'w', newline='') as file:
         y = fake_users[user_index]
         z = random.randint(10, 100)
         writer.writerow([database,cluster,schema,x['TABLE NAME'],x['COLUMN NAME'],y,z])
-
 
 with open('Data/CAS_schema_description.csv', 'w', newline='') as file:
     writer = csv.writer(file)
@@ -158,4 +154,3 @@ with open('Data/CAS_table_programmatic_source.csv', 'w', newline='') as file:
     writer.writerow(['database','cluster','schema','name','description','tags','description_source'])
     for y in tables_table_dictionary:
         writer.writerow([database,cluster,schema,y['TABLE NAME'],y['TABLE DESCRIPTION'],'',''])
-
