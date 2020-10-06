@@ -3,6 +3,7 @@ import csv
 import random
 import time
 
+
 def create_dictionary_from_table(table_element):
     table_header_row = table_element.find_element_by_xpath('//thead/tr[//th]')
     table_header_row_cells = table_header_row.find_elements_by_xpath('th')
@@ -18,7 +19,6 @@ def create_dictionary_from_table(table_element):
 
         row_values = {column_lables[i]: row_cells_text[i] for i in range(len(column_lables))}
 
-        ## delete next 3 lines and uncomment the looped get description from href below
         if len(row.find_elements_by_xpath('td[@title]')) != 0:
             row_title_cell = row.find_element_by_xpath('td[@title]')
             row_description = row_title_cell.get_attribute('title')
@@ -46,11 +46,27 @@ schema = 'cas_schema'
 tags = ''
 is_view = 'false'
 description_source = ''
+fake_users = [
+    'Esther.Gillespie@example.com',
+    'Aoife.Kramer@example.com',
+    'Saffron.Lin@example.com',
+    'Eva.Krueger@example.com',
+    'Ella.Levy@example.com',
+    'Gloria.Parker@example.com',
+    'Eleanor.Figueroa@example.com',
+    'Hana.Stone@example.com',
+    'Katie.Maldonado@example.com',
+    'Ellis.Moses@example.com',
+    'Daniel.Strickland@example.com',
+    'Wayne.Craig@example.com',
+    'Bilal.Conley@example.com',
+    'Aidan.Lyons@example.com',
+    'William.Avila@example.com',
+    'Jesse.Dale@example.com'
+]
 
 ## Run extration to CSV
-
 driver = webdriver.Firefox()
-
 tables_url = 'https://www.cancerdata.nhs.uk/explorer/cas_tables'
 driver.get(tables_url)
 table_element = driver.find_element_by_xpath('//table')
@@ -65,11 +81,6 @@ for tables in tables_table_dictionary:
         col['COLUMN NAME'] = col['COLUMN NAME'].lower()
         col['TABLE NAME'] = tables['TABLE NAME']
     all_columns_dictionary += col_table
-
-# for col in all_columns_dictionary:
-#     driver.get(col['HREF'])
-#     description_element = driver.find_element_by_xpath('//div[@class="lead"]')
-#     col['COLUMN DESCRIPTION'] = description_element.text
 
 
 with open('Data/CAS_table.csv', 'w', newline='') as file:
@@ -101,27 +112,6 @@ with open('Data/CAS_application.csv', 'w', newline='') as file:
     for y in tables_table_dictionary:
         table_name = y['TABLE NAME']
         writer.writerow([f'{cluster}.{schema}.{table_name}','event_test',"2018-05-31T00:00:00","https://airflow_host.net/admin/airflow/tree?dag_id={dag_id}",cluster,schema,table_name,database])
-
-
-fake_users = [
-    'Esther.Gillespie@example.com',
-    'Aoife.Kramer@example.com',
-    'Saffron.Lin@example.com',
-    'Eva.Krueger@example.com',
-    'Ella.Levy@example.com',
-    'Gloria.Parker@example.com',
-    'Eleanor.Figueroa@example.com',
-    'Hana.Stone@example.com',
-    'Katie.Maldonado@example.com',
-    'Ellis.Moses@example.com',
-    'Daniel.Strickland@example.com',
-    'Wayne.Craig@example.com',
-    'Bilal.Conley@example.com',
-    'Aidan.Lyons@example.com',
-    'William.Avila@example.com',
-    'Jesse.Dale@example.com'
-]
-
 
 with open('Data/CAS_column_usage.csv', 'w', newline='') as file:
     writer = csv.writer(file)
