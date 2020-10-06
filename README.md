@@ -1,6 +1,6 @@
 # Webscrape of CAS Explorer
 
-A simple script for scraping CAS Explorer data tables into CSV files formated for import into Amundsen Data Explorer. This project uses Selenium WebDriver and Firefox web browser.
+A simple script for scraping CAS Explorer data tables into CSV files formatted for import into Amundsen Data Explorer. This project uses Selenium WebDriver and Firefox web browser.
 
 ## Setup Required
 
