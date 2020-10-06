@@ -4,39 +4,56 @@ import random
 import time
 import os
 
-def create_dictionary_from_table(table_element):
+def get_column_headers_for_table(table_element):
     table_header_row = table_element.find_element_by_xpath('//thead/tr[//th]')
     table_header_row_cells = table_header_row.find_elements_by_xpath('th')
-    
-    column_lables = [cell.text for cell in table_header_row_cells]
+    return [cell.text for cell in table_header_row_cells]
 
-    table_body_rows = table_element.find_elements_by_xpath('//tbody/tr')
+def get_body_rows_for_table(table_element):
+    return table_element.find_elements_by_xpath('//tbody/tr')
+
+def get_title_for_row_element(row_element):
+    if len(row_element.find_elements_by_xpath('td[@title]')) != 0:
+        row_title_cell = row_element.find_element_by_xpath('td[@title]')
+        return row_title_cell.get_attribute('title')
+    else:
+        return ""
+
+def get_link_for_row_element(row_element):
+    if len(row_element.find_elements_by_xpath('td//a')) != 0:
+        row_link_element = row_element.find_element_by_xpath('td//a')
+        return row_link_element.get_attribute('href')
+    else:
+        return ""
+
+def create_dictionary_from_row_element(row_element, column_lables):
+    row_cells = row_element.find_elements_by_xpath('td')
+    row_cells_text = [cell.text for cell in row_cells]
+    
+    row = {column_lables[i]: row_cells_text[i] for i in range(len(column_lables))}
+    row['COLUMN DESCRIPTION'] = get_title_for_row_element(row_element)
+    row['HREF'] = get_link_for_row_element(row_element)
+    
+    return row
+
+def create_dictionary_from_table_element(table_element):   
     table = []
-    
+    column_lables = get_column_headers_for_table(table_element)
+    table_body_rows = get_body_rows_for_table(table_element)
+
     for row in table_body_rows:
-        row_cells = row.find_elements_by_xpath('td')
-        row_cells_text = [cell.text for cell in row_cells]
-
-        row_values = {column_lables[i]: row_cells_text[i] for i in range(len(column_lables))}
-
-        if len(row.find_elements_by_xpath('td[@title]')) != 0:
-            row_title_cell = row.find_element_by_xpath('td[@title]')
-            row_description = row_title_cell.get_attribute('title')
-            row_values['COLUMN DESCRIPTION'] = row_description
-        
-        row_link_element = row.find_element_by_xpath('td//a')
-        row_link_href = row_link_element.get_attribute('href')
-        row_values['HREF'] = row_link_href
-
+        row_values = create_dictionary_from_row_element(row, column_lables)
         table.append(row_values)
+
     return table
 
-def clean_table_seperate_name_from_description(table_dictionary):
+def clean_table_by_seperating_name_from_description(table_dictionary):
     for row in table_dictionary:
         split = row['TABLE NAME'].split('\n')
         row['TABLE NAME'] = split[0].lower()
         row['TABLE DESCRIPTION'] = split[1]
     return table_dictionary
+
 
 ## basic values
 database = 'cas'
@@ -69,16 +86,16 @@ driver = webdriver.Firefox()
 tables_url = 'https://www.cancerdata.nhs.uk/explorer/cas_tables'
 driver.get(tables_url)
 table_element = driver.find_element_by_xpath('//table')
-tables_table_dictionary = clean_table_seperate_name_from_description(create_dictionary_from_table(table_element))
+table_of_tables_dictionary = clean_table_by_seperating_name_from_description(create_dictionary_from_table_element(table_element))
 
 all_columns_dictionary = []
-for tables in tables_table_dictionary:
-    driver.get(tables['HREF'])
+for table in table_of_tables_dictionary:
+    driver.get(table['HREF'])
     table_element = driver.find_element_by_xpath('//table')
-    col_table = create_dictionary_from_table(table_element)
+    col_table = create_dictionary_from_table_element(table_element)
     for col in col_table:
         col['COLUMN NAME'] = col['COLUMN NAME'].lower()
-        col['TABLE NAME'] = tables['TABLE NAME']
+        col['TABLE NAME'] = table['TABLE NAME']
     all_columns_dictionary += col_table
 driver.close()
 
@@ -88,7 +105,7 @@ if not os.path.exists('Data'):
 with open('Data/CAS_table.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['database','cluster','schema','name','description','tags','is_view','description_source'])
-    for x in tables_table_dictionary:
+    for x in table_of_tables_dictionary:
         writer.writerow([database,cluster,schema,x['TABLE NAME'],x['TABLE DESCRIPTION'],tags,is_view,description_source])
 
 with open('Data/CAS_col.csv', 'w', newline='') as file:
@@ -110,7 +127,7 @@ with open('Data/CAS_table_column_stats.csv', 'w', newline='') as file:
 with open('Data/CAS_application.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['task_id','dag_id','exec_date','application_url_template','db_name','schema','table_name','cluster'])
-    for y in tables_table_dictionary:
+    for y in table_of_tables_dictionary:
         table_name = y['TABLE NAME']
         writer.writerow([f'{cluster}.{schema}.{table_name}','event_test',"2018-05-31T00:00:00","https://airflow_host.net/admin/airflow/tree?dag_id={dag_id}",cluster,schema,table_name,database])
 
@@ -136,25 +153,25 @@ with open('Data/CAS_schema_description.csv', 'w', newline='') as file:
 with open('Data/CAS_source.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['db_name','cluster','schema','table_name','source','source_type'])
-    for y in tables_table_dictionary:
+    for y in table_of_tables_dictionary:
         writer.writerow([database,cluster,schema,y['TABLE NAME'],y['HREF'],'CAS'])
 
 with open('Data/CAS_table_last_updated.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['cluster','db','schema','table_name','last_updated_time_epoch'])
-    for y in tables_table_dictionary:
+    for y in table_of_tables_dictionary:
         update_time = round(time.time())
         writer.writerow([cluster,database,schema,y['TABLE NAME'],update_time])
 
 with open('Data/CAS_table_owner.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['db_name','schema','cluster','table_name','owners'])
-    for y in tables_table_dictionary:
+    for y in table_of_tables_dictionary:
         z = random.randint(0, len(fake_users)-1)
         writer.writerow([database,schema,cluster,y['TABLE NAME'],fake_users[z]])
 
 with open('Data/CAS_table_programmatic_source.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['database','cluster','schema','name','description','tags','description_source'])
-    for y in tables_table_dictionary:
+    for y in table_of_tables_dictionary:
         writer.writerow([database,cluster,schema,y['TABLE NAME'],y['TABLE DESCRIPTION'],'',''])
